@@ -1,0 +1,4 @@
+plugins:
+  furigana_enabled:
+    default: true
+    client: true

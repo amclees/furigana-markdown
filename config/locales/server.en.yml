@@ -1,0 +1,3 @@
+en:
+  site_settings:
+    furigana_enabled: "Enable the furigana markdown plugin. If you change this, you must rebake all posts with: \"rake posts:rebake\"."
