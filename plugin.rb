@@ -4,6 +4,12 @@
 # authors: Andrew McLees
 # url: https://github.com/amclees/furigana-markdown
 
+require_relative './strip_email_ruby'
+
 enabled_site_setting :furigana_enabled
 
-# TODO: After initialize handle email text
+after_initialize do
+  Email::Styles.register_plugin_style do |fragment|
+    strip_ruby_tags fragment
+  end
+end
