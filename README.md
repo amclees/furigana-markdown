@@ -42,8 +42,12 @@ Has been tested in the following as of 2017-7-5
 * IE 11
 * Opera
 
-`<ruby>` is available and works in all modern browsers (and IE) except Opera Mini according to [Can I Use?](http://caniuse.com/#feat=ruby). 
+`<ruby>` is available and works in all modern browsers (and IE) except Opera Mini according to [Can I Use?](http://caniuse.com/#feat=ruby).
 
 ## License
 
 MIT
+
+## Planned Additions
+* Additional verification of the configuration with graceful fallbacks
+* Tests
