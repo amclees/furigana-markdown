@@ -47,6 +47,3 @@ Has been tested in the following as of 2017-7-5
 ## License
 
 MIT
-
-## Planned Additions
-* Tests
