@@ -1,3 +1,4 @@
 en:
   site_settings:
     furigana_enabled: "Enable the furigana markdown plugin. If you change this, you must rebake all posts with: \"rake posts:rebake\"."
+    furigana_plugin_forms: "List of all furigana forms that will be transformed to ruby tags."
