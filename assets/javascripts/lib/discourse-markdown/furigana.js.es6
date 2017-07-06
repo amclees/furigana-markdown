@@ -32,7 +32,7 @@ function addFurigana(text, furiganaForms) {
     updateRegexList(furiganaForms);
   }
   regexList.forEach(regex => {
-    text = text.replace(regex, '<ruby>$1 <rt>$2</rt></ruby>');
+    text = text.replace(regex, '<ruby>$1<rt>$2</rt></ruby>');
   });
   return text;
 }
