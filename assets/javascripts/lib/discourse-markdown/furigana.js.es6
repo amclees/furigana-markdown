@@ -15,8 +15,15 @@ let previousFuriganaForms = '';
 function updateRegexList(furiganaForms) {
   previousFuriganaForms = furiganaForms;
   const innerRegexString = '(?:[^\\u0000-\\u007F]|\\w)+';
-  regexList = furiganaForms.split('|').map(form => {
-    const furiganaComponents = form.split(':');
+  let formArray = furiganaForms.split('|');
+  if (formArray.length === 0) {
+    formArray = ['[]:^:()'];
+  }
+  regexList = formArray.map(form => {
+    let furiganaComponents = form.split(':');
+    if (furiganaComponents.length !== 3) {
+      furiganaComponents = ['[]', '^', '()'];
+    }
     const mainBrackets = furiganaComponents[0];
     const seperator = furiganaComponents[1];
     const furiganaBrackets = furiganaComponents[2];

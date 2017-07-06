@@ -49,5 +49,4 @@ Has been tested in the following as of 2017-7-5
 MIT
 
 ## Planned Additions
-* Additional verification of the configuration with graceful fallbacks
 * Tests
