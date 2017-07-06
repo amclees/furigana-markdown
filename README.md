@@ -35,6 +35,15 @@ Will allow either `[main]^(annotation)` or `[main]{annotation}` to be used.
 
 Follow the [Install a Plugin](https://meta.discourse.org/t/install-a-plugin/19157) howto.
 
+## Browser Support
+Has been tested in the following as of 2017-7-5
+* Firefox
+* Chrome
+* IE 11
+* Opera
+
+`<ruby>` is available and works in all modern browsers (and IE) except Opera Mini according to [Can I Use?](http://caniuse.com/#feat=ruby). 
+
 ## License
 
 MIT
