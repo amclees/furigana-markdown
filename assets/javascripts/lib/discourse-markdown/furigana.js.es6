@@ -39,7 +39,7 @@ function addFurigana(text, furiganaForms) {
     updateRegexList(furiganaForms);
   }
   regexList.forEach(regex => {
-    text = text.replace(regex, '<ruby>$1<rt>$2</rt></ruby>');
+    text = text.replace(regex, '<ruby>$1<rp>(</rp><rt>$2</rt><rp>)</rp></ruby>');
   });
   return text;
 }
@@ -47,7 +47,8 @@ function addFurigana(text, furiganaForms) {
 export function setup(helper) {
   helper.whiteList([
     'ruby',
-    'rt'
+    'rt',
+    'rp'
   ]);
 
   helper.addPreProcessor(text => {
