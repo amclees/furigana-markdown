@@ -1,6 +1,7 @@
 en:
   site_settings:
     furigana_enabled: "Enable the furigana markdown plugin. If you change this, you must rebake all posts with: \"rake posts:rebake\"."
+    furigana_strict_mode: "Strict mode disallows automatically placed furigana (this type: 世界【せかい】)."
     furigana_plugin_forms: "List of all furigana forms that will be transformed to ruby tags."
+    furigana_plugin_auto_bracket_sets: "Sets the brackets that can be used for automatically placed furigana (this type: 世界【せかい】). Seperate with |."
     furigana_fallback_brackets: "Sets the brackets that furigana will appear in where ruby is not supported (most emails). For example \"[]\" is a valid set of brackets for this."
-    furigana_strict_mode: "Strict mode disallows automatically placed furigana. (This type: 世界【せかい】)."

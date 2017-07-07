@@ -5,6 +5,7 @@ registerOption((siteSettings, opts) => {
   opts.furiganaForms = siteSettings.furigana_plugin_forms;
   opts.furiganaFallbackBrackets = siteSettings.furigana_fallback_brackets;
   opts.furiganaStrictMode = !!siteSettings.furiganaStrictMode;
+  opts.furiganaAutoBracketSets = siteSettings.furigana_plugin_auto_bracket_sets;
 });
 
 // This function escapes special characters for use in a regex constructor.
@@ -43,6 +44,24 @@ function updateRegexList(furiganaForms) {
   });
 }
 
+let autoRegexList = [];
+let previousAutoBracketSets = '';
+const kanjiRange = '\\u4e00-\\u9faf';
+
+function updateAutoRegexList(autoBracketSets) {
+  previousAutoBracketSets = autoBracketSets;
+  autoRegexList = autoBracketSets.split('|').map(brackets => {
+    return new RegExp(
+      `(^|[^${escapeForRegex(brackets)}${kanjiRange}])` +
+      `([${kanjiRange}]+)` +
+      escapeForRegex(brackets[0]) +
+      `((?:[^${escapeForRegex(brackets)}${kanjiRange}]|\w)+)` +
+      escapeForRegex(brackets[1]),
+      'g'
+    );
+  });
+}
+
 let replacementTemplate = '';
 let replacementBrackets = '';
 
@@ -74,16 +93,18 @@ function addFurigana(text, options) {
   });
 
   if (!options.furiganaStrictMode) {
-    text = text.replace(
-      /(^|[^【】\u4e00-\u9faf])([\u4e00-\u9faf]+)【((?:[^【】\u0000-\u007F]|\w)+)】/g,
-      (match, match1, match2, match3, offset, mainText) => {
+    if (options.furiganaAutoBracketSets !== previousAutoBracketSets) {
+      updateAutoRegexList(options.furiganaAutoBracketSets);
+    }
+    autoRegexList.forEach(regex => {
+      text = text.replace(regex, (match, match1, match2, match3, offset, mainText) => {
         if (match.indexOf('\\') === -1) {
           return match1 + replacementTemplate.replace('$1', match2).replace('$2', match3);
         } else {
           return match;
         }
-      }
-    );
+      });
+    });
   }
   return text;
 }
