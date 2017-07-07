@@ -74,6 +74,11 @@ function addFurigana(text, options) {
   return text;
 }
 
+function handleEscapedSpecialBrackets(text) {
+  // By default 【 and 】 cannot be escaped in markdown, this will remove backslashes from in front of them to give that effect.
+  return text.replace(/\\([【】])/g, '$1');
+}
+
 export function setup(helper) {
   helper.whiteList([
     'ruby',
@@ -82,6 +87,6 @@ export function setup(helper) {
   ]);
 
   helper.addPreProcessor(text => {
-    return addFurigana(text, helper.getOptions());
+    return handleEscapedSpecialBrackets(addFurigana(text, helper.getOptions()));
   });
 }
