@@ -72,6 +72,19 @@ function addFurigana(text, options) {
       }
     });
   });
+
+  if (!options.furiganaStrictMode) {
+    text = text.replace(
+      /(^|[^【】\u4e00-\u9faf])([\u4e00-\u9faf]+)【((?:[^【】\u0000-\u007F]|\w)+)】/g,
+      (match, match1, match2, match3, offset, mainText) => {
+        if (match.indexOf('\\') === -1) {
+          return match1 + replacementTemplate.replace('$1', match2).replace('$2', match3);
+        } else {
+          return match;
+        }
+      }
+    );
+  }
   return text;
 }
 
