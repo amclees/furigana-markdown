@@ -6,6 +6,7 @@ registerOption((siteSettings, opts) => {
   opts.furiganaFallbackBrackets = siteSettings.furigana_fallback_brackets;
 });
 
+// This function escapes special characters for use in a regex constructor.
 function escapeForRegex(string) {
   return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
@@ -29,7 +30,13 @@ function updateRegexList(furiganaForms) {
     const seperator = furiganaComponents[1];
     const furiganaBrackets = furiganaComponents[2];
     return new RegExp(
-      `${escapeForRegex(mainBrackets[0])}(${innerRegexString})${escapeForRegex(mainBrackets[1])}${escapeForRegex(seperator)}${escapeForRegex(furiganaBrackets[0])}(${innerRegexString})${escapeForRegex(furiganaBrackets[1])}`,
+      escapeForRegex(mainBrackets[0]) +
+      '(' + innerRegexString + ')' +
+      escapeForRegex(mainBrackets[1]) +
+      escapeForRegex(seperator) +
+      escapeForRegex(furiganaBrackets[0]) +
+      '(' + innerRegexString + ')' +
+      escapeForRegex(furiganaBrackets[1]),
       'g'
     );
   });
@@ -56,7 +63,13 @@ function addFurigana(text, options) {
     updateReplacementTemplate(options.furiganaFallbackBrackets);
   }
   regexList.forEach(regex => {
-    text = text.replace(regex, replacementTemplate);
+    text = text.replace(regex, (match, match1, match2, offset, mainText) => {
+      if (match.indexOf('\\') === -1 && mainText[offset - 1] !== '\\') {
+        return replacementTemplate.replace('$1', match1).replace('$2', match2);
+      } else {
+        return match;
+      }
+    });
   });
   return text;
 }
