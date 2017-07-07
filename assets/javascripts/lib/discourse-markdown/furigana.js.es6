@@ -4,6 +4,7 @@ registerOption((siteSettings, opts) => {
   opts.features.furigana = !!siteSettings.furigana_enabled;
   opts.furiganaForms = siteSettings.furigana_plugin_forms;
   opts.furiganaFallbackBrackets = siteSettings.furigana_fallback_brackets;
+  opts.furiganaStrictMode = !!siteSettings.furiganaStrictMode;
 });
 
 // This function escapes special characters for use in a regex constructor.

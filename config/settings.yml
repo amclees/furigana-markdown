@@ -2,6 +2,9 @@ plugins:
   furigana_enabled:
     default: true
     client: true
+  furigana_strict_mode:
+    default: false
+    client: true
   furigana_plugin_forms:
     default: "[]:^:()"
     client: true
