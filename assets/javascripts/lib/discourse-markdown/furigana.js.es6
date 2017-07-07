@@ -3,6 +3,7 @@ import { registerOption } from 'pretty-text/pretty-text';
 registerOption((siteSettings, opts) => {
   opts.features.furigana = !!siteSettings.furigana_enabled;
   opts.furiganaForms = siteSettings.furigana_plugin_forms;
+  opts.furiganaFallbackBrackets = siteSettings.furigana_fallback_brackets;
 });
 
 function escapeForRegex(string) {
@@ -34,12 +35,28 @@ function updateRegexList(furiganaForms) {
   });
 }
 
-function addFurigana(text, furiganaForms) {
-  if (furiganaForms !== previousFuriganaForms) {
-    updateRegexList(furiganaForms);
+let replacementTemplate = '';
+let replacementBrackets = '';
+
+function updateReplacementTemplate(furiganaFallbackBrackets) {
+  if (furiganaFallbackBrackets.length !== 2) {
+    furiganaFallbackBrackets = '【】';
+  }
+  replacementBrackets = furiganaFallbackBrackets;
+  replacementTemplate = `<ruby>$1<rp>${furiganaFallbackBrackets[0]}</rp><rt>$2</rt><rp>${furiganaFallbackBrackets[1]}</rp></ruby>`;
+}
+
+updateReplacementTemplate('【】');
+
+function addFurigana(text, options) {
+  if (options.furiganaForms !== previousFuriganaForms) {
+    updateRegexList(options.furiganaForms);
+  }
+  if (options.furiganaFallbackBrackets !== replacementBrackets) {
+    updateReplacementTemplate(options.furiganaFallbackBrackets);
   }
   regexList.forEach(regex => {
-    text = text.replace(regex, '<ruby>$1<rp>(</rp><rt>$2</rt><rp>)</rp></ruby>');
+    text = text.replace(regex, replacementTemplate);
   });
   return text;
 }
@@ -52,6 +69,6 @@ export function setup(helper) {
   ]);
 
   helper.addPreProcessor(text => {
-    return addFurigana(text, helper.getOptions().furiganaForms);
+    return addFurigana(text, helper.getOptions());
   });
 }

@@ -5,3 +5,6 @@ plugins:
   furigana_plugin_forms:
     default: "[]:^:()"
     client: true
+  furigana_fallback_brackets:
+    default: "【】"
+    client: true
