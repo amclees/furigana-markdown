@@ -4,6 +4,8 @@ registerOption((siteSettings, opts) => {
   opts.features.furigana = !!siteSettings.furigana_enabled;
   opts.furiganaForms = siteSettings.furigana_plugin_forms;
   opts.furiganaFallbackBrackets = siteSettings.furigana_fallback_brackets;
+  opts.furiganaStrictMode = !!siteSettings.furiganaStrictMode;
+  opts.furiganaAutoBracketSets = siteSettings.furigana_plugin_auto_bracket_sets;
 });
 
 // This function escapes special characters for use in a regex constructor.
@@ -42,6 +44,31 @@ function updateRegexList(furiganaForms) {
   });
 }
 
+let autoRegexList = [];
+let previousAutoBracketSets = '';
+const kanjiRange = '\\u4e00-\\u9faf';
+const kanaWithAnnotations = '\\u3041-\\u3095\\u3099-\\u309c';
+const furiganaSeperators = '\\.．。・';
+
+function updateAutoRegexList(autoBracketSets) {
+  previousAutoBracketSets = autoBracketSets;
+  autoRegexList = autoBracketSets.split('|').map(brackets => {
+    /*
+      Sample built regex:
+      (^|[^\u4e00-\u9faf])([\u4e00-\u9faf]+)([\u3041-\u3095\u3099-\u309c]*)【([^\u4e00-\u9faf]+)】
+    */
+    return new RegExp(
+      `(^|[^${escapeForRegex(brackets)}${kanjiRange}])` +
+      `([${kanjiRange}]+)` +
+      `([${kanaWithAnnotations}]*)` +
+      escapeForRegex(brackets[0]) +
+      `((?:[^${escapeForRegex(brackets)}${kanjiRange}]|\w)+)` +
+      escapeForRegex(brackets[1]),
+      'g'
+    );
+  });
+}
+
 let replacementTemplate = '';
 let replacementBrackets = '';
 
@@ -71,6 +98,34 @@ function addFurigana(text, options) {
       }
     });
   });
+
+  if (!options.furiganaStrictMode) {
+    if (options.furiganaAutoBracketSets !== previousAutoBracketSets) {
+      updateAutoRegexList(options.furiganaAutoBracketSets);
+    }
+    autoRegexList.forEach(regex => {
+      text = text.replace(regex, (match, preWordTerminator, wordKanji, wordKanaSuffix, furiganaText, offset, mainText) => {
+        if (match.indexOf('\\') === -1) {
+          let furigana = furiganaText;
+          let stem = (' ' + wordKanaSuffix).slice(1);
+          for (let i = furiganaText.length - 1; i >= 0; i--) {
+            if (wordKanaSuffix.length === 0) {
+              furigana = furiganaText.substring(0, i + 1);
+              break;
+            }
+            if (furiganaText[i] !== wordKanaSuffix.slice(-1)) {
+              furigana = furiganaText.substring(0, i + 1);
+              break;
+            }
+            wordKanaSuffix = wordKanaSuffix.slice(0, -1);
+          }
+          return preWordTerminator + replacementTemplate.replace('$1', wordKanji).replace('$2', furigana) + stem;
+        } else {
+          return match;
+        }
+      });
+    });
+  }
   return text;
 }
 
