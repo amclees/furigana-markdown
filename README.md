@@ -31,7 +31,7 @@ in which the whole word can be added in kana to the furigana.
 食べる【たべる】
 食べる{たべる}
 ```
-By using the basic furigana format, compound words (or sentences) can be matched too.
+By using the basic furigana format, compound words can be matched too.
 ```
 [取り返す]{とりかえす}
 ```
