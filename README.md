@@ -79,7 +79,7 @@ In the Discourse settings page, there are other settings for toggling each featu
 Follow the [Install a Plugin](https://meta.discourse.org/t/install-a-plugin/19157) howto.
 
 ## Browser Support
-Has been tested in the following as of 2017-7-5
+Has been tested in the following as of 2017-7-8
 * Firefox
 * Chrome
 * IE 11
