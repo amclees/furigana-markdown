@@ -13,6 +13,10 @@ function escapeForRegex(string) {
   return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
+const kanjiRange = '\\u4e00-\\u9faf';
+const kanaWithAnnotations = '\\u3041-\\u3095\\u3099-\\u309c\\u3081-\\u30fa\\u30fc';
+const furiganaSeperators = '\\.．。・';
+
 let regexList = [];
 let previousFuriganaForms = '';
 
@@ -46,23 +50,12 @@ function updateRegexList(furiganaForms) {
 
 let autoRegexList = [];
 let previousAutoBracketSets = '';
-const kanjiRange = '\\u4e00-\\u9faf';
-<<<<<<< HEAD
-const kanaWithAnnotations = '\\u3041-\\u3095\\u3099-\\u309c\\u3081-\\u30fa\\u30fc';
-=======
-const kanaWithAnnotations = '\\u3041-\\u3095\\u3099-\\u309c';
->>>>>>> d4d2e9971fdace81304054740541eadd67e6931d
-const furiganaSeperators = '\\.．。・';
 
 function updateAutoRegexList(autoBracketSets) {
   previousAutoBracketSets = autoBracketSets;
   autoRegexList = autoBracketSets.split('|').map(brackets => {
     /*
-<<<<<<< HEAD
       Sample built regex (hiragana only):
-=======
-      Sample built regex:
->>>>>>> d4d2e9971fdace81304054740541eadd67e6931d
       (^|[^\u4e00-\u9faf])([\u4e00-\u9faf]+)([\u3041-\u3095\u3099-\u309c]*)【([^\u4e00-\u9faf]+)】
     */
     return new RegExp(
