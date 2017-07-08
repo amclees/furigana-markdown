@@ -103,20 +103,6 @@ function addFurigana(text, options) {
     updateReplacementTemplate(options.furiganaFallbackBrackets);
   }
   regexList.forEach(regex => {
-    // 繰り返す
-    // くりかえす
-    /*
-      りす
-      繰返
-
-      り
-        く - かえす
-        繰り
-      す
-        かえ
-        繰り返す
-
-    */
     text = text.replace(regex, (match, wordText, furiganaText, offset, mainText) => {
       if (match.indexOf('\\') === -1 && mainText[offset - 1] !== '\\') {
         let nonKanji = wordText.split(kanjiBlockRegex).filter(emptyStringFilter);
