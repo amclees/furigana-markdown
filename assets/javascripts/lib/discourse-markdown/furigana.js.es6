@@ -13,10 +13,21 @@ function escapeForRegex(string) {
   return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
+function emptyStringFilter(block) {
+  return block !== '';
+}
+
 const kanjiRange = '\\u4e00-\\u9faf';
+const kanjiBlockRegex = new RegExp(`[${kanjiRange}]+`, 'g');
+const nonKanjiBlockRegex = new RegExp(`[^${kanjiRange}]+`, 'g');
 const kanaWithAnnotations = '\\u3041-\\u3095\\u3099-\\u309c\\u3081-\\u30fa\\u30fc';
 const furiganaSeperators = '.．。・';
 const seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
+
+const singleKanjiRegex = new RegExp(`^[${kanjiRange}]$`);
+function isKanji(character) {
+  return character.match(singleKanjiRegex);
+}
 
 let regexList = [];
 let previousFuriganaForms = '';
@@ -92,9 +103,44 @@ function addFurigana(text, options) {
     updateReplacementTemplate(options.furiganaFallbackBrackets);
   }
   regexList.forEach(regex => {
-    text = text.replace(regex, (match, match1, match2, offset, mainText) => {
+    // 繰り返す
+    // くりかえす
+    /*
+      りす
+      繰返
+
+      り
+        く - かえす
+        繰り
+      す
+        かえ
+        繰り返す
+
+    */
+    text = text.replace(regex, (match, wordText, furiganaText, offset, mainText) => {
       if (match.indexOf('\\') === -1 && mainText[offset - 1] !== '\\') {
-        return replacementTemplate.replace('$1', match1).replace('$2', match2);
+        let nonKanji = wordText.split(kanjiBlockRegex).filter(emptyStringFilter);
+        if (nonKanji.length === 0) {
+          return replacementTemplate.replace('$1', wordText).replace('$2', furiganaText);
+        } else {
+          let kanji = wordText.split(nonKanjiBlockRegex).filter(emptyStringFilter);
+          let replacementText = '';
+          nonKanji.forEach((currentNonKanji, index) => {
+            if (furiganaText === undefined) {
+              if (index < kanji.length) {
+                replacementText += kanji[index];
+              }
+
+              replacementText += currentNonKanji;
+              return;
+            }
+            let splitFurigana = furiganaText.split(new RegExp(escapeForRegex(currentNonKanji) + '(.*)')).filter(emptyStringFilter);
+            replacementText += replacementTemplate.replace('$1', kanji[index]).replace('$2', splitFurigana[0]);
+            replacementText += currentNonKanji;
+            furiganaText = splitFurigana[1];
+          });
+          return replacementText;
+        }
       } else {
         return match;
       }
