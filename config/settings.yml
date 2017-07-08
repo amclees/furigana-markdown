@@ -14,3 +14,6 @@ plugins:
   furigana_fallback_brackets:
     default: "【】"
     client: true
+  furigana_pattern_matching:
+    default: true
+    client: true
