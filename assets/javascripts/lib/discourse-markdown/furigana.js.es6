@@ -162,7 +162,6 @@ function addFurigana(text, options) {
 
             let furigana = furiganaText;
 
-            //put in if
             let stem = (' ' + wordKanaSuffix).slice(1);
             for (let i = furiganaText.length - 1; i >= 0; i--) {
               if (wordKanaSuffix.length === 0) {
@@ -186,12 +185,17 @@ function addFurigana(text, options) {
             } else {
               let kanaParts = furigana.split(seperatorRegex);
               let kanji = wordKanji.split('');
-              if (kanaParts.length !== kanji.length) {
+              if (kanaParts.length === 0 || kanaParts.length > kanji.length) {
                 rubies = [replacementTemplate.replace('$1', wordKanji).replace('$2', furigana)];
               } else {
-                for (let i = 0; i < wordKanji.length; i++) {
-                  rubies.push(replacementTemplate.replace('$1', wordKanji).replace('$2', kanaParts[i]));
+                for (let i = 0; i < kanaParts.length - 1; i++) {
+                  if (kanji.length === 0) {
+                    break;
+                  }
+                  rubies.push(replacementTemplate.replace('$1', kanji.pop()).replace('$2', kanaParts[i]));
                 }
+                let lastKanaPart = kanaParts.pop();
+                rubies.push(replacementTemplate.replace('$1', kanji.join('')).replace('$2', lastKanaPart));
               }
             }
 
