@@ -47,13 +47,20 @@ function updateRegexList(furiganaForms) {
 let autoRegexList = [];
 let previousAutoBracketSets = '';
 const kanjiRange = '\\u4e00-\\u9faf';
+const kanaWithAnnotations = '\\u3041-\\u3095\\u3099-\\u309c';
+const furiganaSeperators = '\\.．。・';
 
 function updateAutoRegexList(autoBracketSets) {
   previousAutoBracketSets = autoBracketSets;
   autoRegexList = autoBracketSets.split('|').map(brackets => {
+    /*
+      Sample built regex:
+      (^|[^\u4e00-\u9faf])([\u4e00-\u9faf]+)([\u3041-\u3095\u3099-\u309c]*)【([^\u4e00-\u9faf]+)】
+    */
     return new RegExp(
       `(^|[^${escapeForRegex(brackets)}${kanjiRange}])` +
       `([${kanjiRange}]+)` +
+      `([${kanaWithAnnotations}]*)` +
       escapeForRegex(brackets[0]) +
       `((?:[^${escapeForRegex(brackets)}${kanjiRange}]|\w)+)` +
       escapeForRegex(brackets[1]),
@@ -97,9 +104,22 @@ function addFurigana(text, options) {
       updateAutoRegexList(options.furiganaAutoBracketSets);
     }
     autoRegexList.forEach(regex => {
-      text = text.replace(regex, (match, match1, match2, match3, offset, mainText) => {
+      text = text.replace(regex, (match, preWordTerminator, wordKanji, wordKanaSuffix, furiganaText, offset, mainText) => {
         if (match.indexOf('\\') === -1) {
-          return match1 + replacementTemplate.replace('$1', match2).replace('$2', match3);
+          let furigana = furiganaText;
+          let stem = (' ' + wordKanaSuffix).slice(1);
+          for (let i = furiganaText.length - 1; i >= 0; i--) {
+            if (wordKanaSuffix.length === 0) {
+              furigana = furiganaText.substring(0, i + 1);
+              break;
+            }
+            if (furiganaText[i] !== wordKanaSuffix.slice(-1)) {
+              furigana = furiganaText.substring(0, i + 1);
+              break;
+            }
+            wordKanaSuffix = wordKanaSuffix.slice(0, -1);
+          }
+          return preWordTerminator + replacementTemplate.replace('$1', wordKanji).replace('$2', furigana) + stem;
         } else {
           return match;
         }
