@@ -68,11 +68,11 @@ function updateAutoRegexList(autoBracketSets) {
   previousAutoBracketSets = autoBracketSets;
   autoRegexList = autoBracketSets.split('|').map(brackets => {
     /*
-      Sample built regex (hiragana only):
-      (^|[^\u4e00-\u9faf])([\u4e00-\u9faf]+)([\u3041-\u3095\u3099-\u309c]*)【([^\u4e00-\u9faf]+)】
+      Sample built regex:
+      /(^|[^\u4e00-\u9faf]|)([\u4e00-\u9faf]+)([\u3041-\u3095\u3099-\u309c\u3081-\u30fa\u30fc]*)【((?:[^【】\u4e00-\u9faf]|w)+)】/g
     */
     return new RegExp(
-      `(^|[^${escapeForRegex(brackets)}${kanjiRange}])` +
+      `(^|[^${kanjiRange}]|)` +
       `([${kanjiRange}]+)` +
       `([${kanaWithAnnotations}]*)` +
       escapeForRegex(brackets[0]) +
