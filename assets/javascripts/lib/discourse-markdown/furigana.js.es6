@@ -30,12 +30,13 @@ function isKanji(character) {
   return character.match(singleKanjiRegex);
 }
 
+const innerRegexString = '(?:[^\\u0000-\\u007F]|\\w)+';
+
 let regexList = [];
 let previousFuriganaForms = '';
 
 function updateRegexList(furiganaForms) {
   previousFuriganaForms = furiganaForms;
-  const innerRegexString = '(?:[^\\u0000-\\u007F]|\\w)+';
   let formArray = furiganaForms.split('|');
   if (formArray.length === 0) {
     formArray = ['[]:^:()'];
@@ -76,7 +77,7 @@ function updateAutoRegexList(autoBracketSets) {
       `([${kanjiRange}]+)` +
       `([${kanaWithAnnotations}]*)` +
       escapeForRegex(brackets[0]) +
-      `((?:[^${escapeForRegex(brackets)}${kanjiRange}]|\w)+)` +
+      `((?:[^${escapeForRegex(brackets)}\\u0000-\\u007F]|\\w|[${furiganaSeperators}])+)` +
       escapeForRegex(brackets[1]),
       'g'
     );
