@@ -106,12 +106,18 @@ function addFurigana(text, options) {
   regexList.forEach(regex => {
     text = text.replace(regex, (match, wordText, furiganaText, offset, mainText) => {
       if (match.indexOf('\\') === -1 && mainText[offset - 1] !== '\\') {
-        let nonKanji = wordText.split(kanjiBlockRegex).filter(emptyStringFilter);
-        if ((!options.furiganaPatternMatching) || nonKanji.length === 0) {
+        if ((!options.furiganaPatternMatching) || wordText.search(kanjiBlockRegex) === -1 || wordText[0].search(kanjiBlockRegex) === -1) {
           return replacementTemplate.replace('$1', wordText).replace('$2', furiganaText);
         } else {
+          let originalFuriganaText = (' ' + furiganaText).slice(1);
+          let nonKanji = wordText.split(kanjiBlockRegex).filter(emptyStringFilter);
           let kanji = wordText.split(nonKanjiBlockRegex).filter(emptyStringFilter);
           let replacementText = '';
+          let lastUsedKanjiIndex = 0;
+          if (nonKanji.length === 0) {
+            return replacementTemplate.replace('$1', wordText).replace('$2', furiganaText);
+          }
+
           nonKanji.forEach((currentNonKanji, index) => {
             if (furiganaText === undefined) {
               if (index < kanji.length) {
@@ -122,10 +128,20 @@ function addFurigana(text, options) {
               return;
             }
             let splitFurigana = furiganaText.split(new RegExp(escapeForRegex(currentNonKanji) + '(.*)')).filter(emptyStringFilter);
+
+            lastUsedKanjiIndex = index;
             replacementText += replacementTemplate.replace('$1', kanji[index]).replace('$2', splitFurigana[0]);
             replacementText += currentNonKanji;
+
             furiganaText = splitFurigana[1];
           });
+          if (furiganaText !== undefined && lastUsedKanjiIndex + 1 < kanji.length) {
+            replacementText += replacementTemplate.replace('$1', kanji[lastUsedKanjiIndex + 1]).replace('$2', furiganaText);
+          } else if (furiganaText !== undefined) {
+            return replacementTemplate.replace('$1', wordText).replace('$2', originalFuriganaText);
+          } else if (lastUsedKanjiIndex + 1 < kanji.length) {
+            replacementText += kanji[lastUsedKanjiIndex + 1];
+          }
           return replacementText;
         }
       } else {
