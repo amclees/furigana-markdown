@@ -4,14 +4,38 @@ HTML5 `<ruby>` markdown notation for [Discourse](https://www.discourse.org).
 
 ## Usage
 
-The following is the default format: `[main]^(annotation)`
-For example:
-
+#### Basic Furigana
+By default, the following formats can be used.
 ```
 [世界]^(せかい)
+[世界]{せかい}
 ```
 
-Will be displayed as 世界 with せかい above it.
+#### Inline/Auto-matching Furigana
+By default, inline matching can also be used. It only works above kanji however.
+```
+世界【せかい】
+世界{せかい}
+```
+
+#### Seperate Furigana for each Kanji
+By default, furigana is displayed equally spaced above each kanji. Using any of the seperators `. ． 。 ・`, spacing can be specified (only in the inline format).
+```
+小夜時雨【さ・よ・しぐれ】
+```
+
+#### Pattern Matching Furigana
+Pattern matching, enabled by default, also allows the following formats,
+in which the whole word can be added in kana to the furigana.
+```
+食べる【たべる】
+食べる{たべる}
+```
+By using the basic furigana format, compound words (or sentences) can be matched too.
+```
+[取り返す]{とりかえす}
+```
+This makes it easier to get the kanji version of the word from an IME without backtracking through the text to place furigana.
 
 ## Custom Formats
 
@@ -29,7 +53,7 @@ For example:
 ```
 Will allow either `[main]^(annotation)` or `[main]{annotation}` to be used.
 
-
+In the Discourse settings page, there are other settings for toggling each feature.
 
 ## Installation
 
@@ -42,7 +66,7 @@ Has been tested in the following as of 2017-7-5
 * IE 11
 * Opera
 
-`<ruby>` is available and works in all modern browsers (and IE) except Opera Mini according to [Can I Use?](http://caniuse.com/#feat=ruby).
+`<ruby>` is available and works in all modern browsers (and IE) except Opera Mini according to [Can I Use?](http://caniuse.com/#feat=ruby). If the `ruby` tag is properly stripped, the text will appear with furigana in configurable brackets (`【】` by default).
 
 ## License
 
