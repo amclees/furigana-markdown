@@ -15,7 +15,8 @@ function escapeForRegex(string) {
 
 const kanjiRange = '\\u4e00-\\u9faf';
 const kanaWithAnnotations = '\\u3041-\\u3095\\u3099-\\u309c\\u3081-\\u30fa\\u30fc';
-const furiganaSeperators = '\\.．。・';
+const furiganaSeperators = '.．。・';
+const seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
 
 let regexList = [];
 let previousFuriganaForms = '';
@@ -107,6 +108,8 @@ function addFurigana(text, options) {
     autoRegexList.forEach(regex => {
       text = text.replace(regex, (match, preWordTerminator, wordKanji, wordKanaSuffix, furiganaText, offset, mainText) => {
         if (match.indexOf('\\') === -1) {
+          let rubies = [];
+
           let furigana = furiganaText;
           let stem = (' ' + wordKanaSuffix).slice(1);
           for (let i = furiganaText.length - 1; i >= 0; i--) {
@@ -120,7 +123,27 @@ function addFurigana(text, options) {
             }
             wordKanaSuffix = wordKanaSuffix.slice(0, -1);
           }
-          return preWordTerminator + replacementTemplate.replace('$1', wordKanji).replace('$2', furigana) + stem;
+
+          if (furiganaSeperators.split('').reduce(
+            (noSeperator, seperator) => {
+              return noSeperator && (furigana.indexOf(seperator) === -1);
+            },
+            true
+          )) {
+            rubies = [replacementTemplate.replace('$1', wordKanji).replace('$2', furigana)];
+          } else {
+            let kanaParts = furigana.split(seperatorRegex);
+            let kanji = wordKanji.split('');
+            if (kanaParts.length !== kanji.length) {
+              rubies = [replacementTemplate.replace('$1', wordKanji).replace('$2', furigana)];
+            } else {
+              for (let i = 0; i < wordKanji.length; i++) {
+                rubies.push(replacementTemplate.replace('$1', kanji[i]).replace('$2', kanaParts[i]));
+              }
+            }
+          }
+
+          return preWordTerminator + rubies.join('') + stem;
         } else {
           return match;
         }
