@@ -193,7 +193,7 @@ function addFurigana(text, options) {
                   if (kanji.length === 0) {
                     break;
                   }
-                  rubies.push(replacementTemplate.replace('$1', kanji.pop()).replace('$2', kanaParts[i]));
+                  rubies.push(replacementTemplate.replace('$1', kanji.shift()).replace('$2', kanaParts[i]));
                 }
                 let lastKanaPart = kanaParts.pop();
                 rubies.push(replacementTemplate.replace('$1', kanji.join('')).replace('$2', lastKanaPart));
