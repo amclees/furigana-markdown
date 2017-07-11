@@ -219,6 +219,8 @@ function handleEscapedSpecialBrackets(text) {
 }
 
 export function setup(helper) {
+  if (helper.markdownIt) { return; }
+
   helper.whiteList([
     'ruby',
     'rt',
