@@ -1,5 +1,5 @@
 plugins:
-  furigana_enabled:
+  furigana:
     default: true
     client: true
   furigana_strict_mode:

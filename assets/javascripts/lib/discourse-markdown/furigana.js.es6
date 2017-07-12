@@ -1,7 +1,7 @@
 import { registerOption } from 'pretty-text/pretty-text';
 
 registerOption((siteSettings, opts) => {
-  opts.features.furigana = !!siteSettings.furigana_enabled;
+  opts.features.furigana = !!siteSettings.furigana;
   opts.furiganaForms = siteSettings.furigana_plugin_forms;
   opts.furiganaFallbackBrackets = siteSettings.furigana_fallback_brackets;
   opts.furiganaStrictMode = !!siteSettings.furigana_strict_mode;
