@@ -85,17 +85,23 @@ function addRubyTag(state, start, end, mainText, furiganaText, furiganaFallbackB
   state.posMax = end;
 
   token = state.push('ruby_open', 'ruby', 1);
+  token = state.push('text', '', 0);
   token.content = mainText;
 
   token = state.push('rp_open', 'rp', 1);
+  token = state.push('text', '', 0);
   token.content = furiganaFallbackBrackets[0];
   token = state.push('rp_close', 'rp', -1);
 
   token = state.push('rt_open', 'rt', 1);
+
+  token = state.push('text', '', 0);
   token.content = furiganaText;
+
   token = state.push('rt_open', 'rt', -1);
 
   token = state.push('rp_open', 'rp', 1);
+  token = state.push('text', '', 0);
   token.content = furiganaFallbackBrackets[1];
   token = state.push('rp_close', 'rp', -1);
 
