@@ -1,58 +1,162 @@
-// Given the position of a starting char, finds all text before terminator or fails with -1.
-function parseInnerText(state, start, terminatorCode) {
-  let oldPos = state.pos,
-      posMax = state.posMax,
-      found = false,
-      endPosition = -1;
+// This function escapes special characters for use in a regex constructor.
+function escapeForRegex(string) {
+  return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
 
-  state.pos = start + 1;
-  while (state.pos < posMax) {
-    // Short-circuits in all cases except closing immediately following opening
-    // For example, the second condition prohibits [] but will not run on anything else.
-    if (state.src.charCodeAt(state.pos) === terminatorCode && state.pos !== start + 1) {
-      found = true;
-      break;
+function emptyStringFilter(block) {
+  return block !== '';
+}
+
+const kanjiRange = '\\u4e00-\\u9faf';
+const kanjiBlockRegex = new RegExp(`[${kanjiRange}]+`, 'g');
+const nonKanjiBlockRegex = new RegExp(`[^${kanjiRange}]+`, 'g');
+const kanaWithAnnotations = '\\u3041-\\u3095\\u3099-\\u309c\\u3081-\\u30fa\\u30fc';
+const furiganaSeperators = '.．。・';
+const seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
+
+const singleKanjiRegex = new RegExp(`^[${kanjiRange}]$`);
+function isKanji(character) {
+  return character.match(singleKanjiRegex);
+}
+
+const innerRegexString = '(?:[^\\u0000-\\u007F]|\\w)+';
+
+let regexList = [];
+let previousFuriganaForms = '';
+
+function updateRegexList(furiganaForms) {
+  previousFuriganaForms = furiganaForms;
+  let formArray = furiganaForms.split('|');
+  if (formArray.length === 0) {
+    formArray = ['[]:^:()'];
+  }
+  regexList = formArray.map(form => {
+    let furiganaComponents = form.split(':');
+    if (furiganaComponents.length !== 3) {
+      furiganaComponents = ['[]', '^', '()'];
     }
-    state.pos++;
-  }
+    const mainBrackets = furiganaComponents[0];
+    const seperator = furiganaComponents[1];
+    const furiganaBrackets = furiganaComponents[2];
+    return new RegExp(
+      escapeForRegex(mainBrackets[0]) +
+      '(' + innerRegexString + ')' +
+      escapeForRegex(mainBrackets[1]) +
+      escapeForRegex(seperator) +
+      escapeForRegex(furiganaBrackets[0]) +
+      '(' + innerRegexString + ')' +
+      escapeForRegex(furiganaBrackets[1]),
+      'g'
+    );
+  });
+}
 
-  if (found) {
-    endPosition = state.pos;
-  }
+let autoRegexList = [];
+let previousAutoBracketSets = '';
 
-  state.pos = oldPos;
-  return endPosition;
+function updateAutoRegexList(autoBracketSets) {
+  previousAutoBracketSets = autoBracketSets;
+  autoRegexList = autoBracketSets.split('|').map(brackets => {
+    /*
+      Sample built regex:
+      /(^|[^\u4e00-\u9faf]|)([\u4e00-\u9faf]+)([\u3041-\u3095\u3099-\u309c\u3081-\u30fa\u30fc]*)【((?:[^【】\u4e00-\u9faf]|w)+)】/g
+    */
+    return new RegExp(
+      `(^|[^${kanjiRange}]|)` +
+      `([${kanjiRange}]+)` +
+      `([${kanaWithAnnotations}]*)` +
+      escapeForRegex(brackets[0]) +
+      `((?:[^${escapeForRegex(brackets)}\\u0000-\\u007F]|\\w|[${furiganaSeperators}])+)` +
+      escapeForRegex(brackets[1]),
+      'g'
+    );
+  });
+}
+
+function addRubyTag(state, start, end, mainText, furiganaText, furiganaFallbackBrackets) {
+  if (furiganaFallbackBrackets.length !== 2) {
+    furiganaFallbackBrackets = '【】';
+  }
+  let token,
+      oldStart = state.pos,
+      oldEnd = state.posMax;
+
+  state.pos = start;
+  state.posMax = end;
+
+  token = state.push('ruby_open', 'ruby', 1);
+  token.content = mainText;
+
+  token = state.push('rp_open', 'rp', 1);
+  token.content = furiganaFallbackBrackets[0];
+  token = state.push('rp_close', 'rp', -1);
+
+  token = state.push('rt_open', 'rt', 1);
+  token.content = furiganaText;
+  token = state.push('rt_open', 'rt', -1);
+
+  token = state.push('rp_open', 'rp', 1);
+  token.content = furiganaFallbackBrackets[1];
+  token = state.push('rp_close', 'rp', -1);
+
+
+  token = state.push('ruby_close', 'ruby', -1);
+  state.pos = oldStart;
+  state.posMax = oldEnd;
+  console.log(state);
 }
 
 function addFurigana(state, silent, options) {
-  // Declare variables
-  let baseText,
-      furigana,
-      baseTextStart,
-      baseTextEnd,
-      rubyTextStart,
-      rubyTextEnd;
+  if (options.furiganaForms !== previousFuriganaForms) {
+    updateRegexList(options.furiganaForms);
+  }
 
-  // Quit unless it starts with a [
-  if (state.src.charCodeAt(state.pos) !== 0x5B/* [ */) { return false; }
+  regexList.forEach(regex => {
+    state.src.replace(regex, (match, wordText, furiganaText, offset, mainText) => {
+      if (match.indexOf('\\') === -1 && mainText[offset - 1] !== '\\') {
+        if ((!options.furiganaPatternMatching) || wordText.search(kanjiBlockRegex) === -1 || wordText[0].search(kanjiBlockRegex) === -1) {
+          return replacementTemplate.replace('$1', wordText).replace('$2', furiganaText);
+        } else {
+          let originalFuriganaText = (' ' + furiganaText).slice(1);
+          let nonKanji = wordText.split(kanjiBlockRegex).filter(emptyStringFilter);
+          let kanji = wordText.split(nonKanjiBlockRegex).filter(emptyStringFilter);
+          let replacementText = '';
+          let lastUsedKanjiIndex = 0;
+          if (nonKanji.length === 0) {
+            return replacementTemplate.replace('$1', wordText).replace('$2', furiganaText);
+          }
 
-  // Determine limits of base text
-  baseTextStart = state.pos + 1;
-  baseTextEnd = parseInnerText(state, baseTextStart, 0x5D/* ] */);
+          nonKanji.forEach((currentNonKanji, index) => {
+            if (furiganaText === undefined) {
+              if (index < kanji.length) {
+                replacementText += kanji[index];
+              }
 
-  // Quit if there is no ]
-  if (baseTextEnd === -1) { return false; }
+              replacementText += currentNonKanji;
+              return;
+            }
+            let splitFurigana = furiganaText.split(new RegExp(escapeForRegex(currentNonKanji) + '(.*)')).filter(emptyStringFilter);
 
-  // Quit without an immediate {
-  state.pos = baseTextEnd + 1;
-  if (state.src.charCodeAt(state.pos) !== 0x7B) { return false; }
-  rubyTextStart = state.pos;
+            lastUsedKanjiIndex = index;
+            replacementText += replacementTemplate.replace('$1', kanji[index]).replace('$2', splitFurigana[0]);
+            replacementText += currentNonKanji;
 
-  // Find terminating }
-  rubyTextEnd = parseInnerText(state, rubyTextStart, 0x7D);
-
-  // Quit if there is no }
-  if (rubyTextEnd === -1) { return false; }
+            furiganaText = splitFurigana[1];
+          });
+          if (furiganaText !== undefined && lastUsedKanjiIndex + 1 < kanji.length) {
+            replacementText += replacementTemplate.replace('$1', kanji[lastUsedKanjiIndex + 1]).replace('$2', furiganaText);
+          } else if (furiganaText !== undefined) {
+            return replacementTemplate.replace('$1', wordText).replace('$2', originalFuriganaText);
+          } else if (lastUsedKanjiIndex + 1 < kanji.length) {
+            replacementText += kanji[lastUsedKanjiIndex + 1];
+          }
+          return replacementText;
+        }
+      } else {
+        return match;
+      }
+    });
+  });
 }
 
 export function setup(helper) {
@@ -77,7 +181,10 @@ export function setup(helper) {
 
   helper.registerPlugin((md) => {
     md.inline.ruler.push('furigana', (state, silent) => {
-      addFurigana(state, silent, helper.getOptions());
+      if (!silent) addRubyTag(state, state.pos, state.posMax, 'test1', 'test2', '【】');
+      state.pos = state.pos + 1;
+      return true;
+      //return addFurigana(state, silent, helper.getOptions());
     });
   });
 }
