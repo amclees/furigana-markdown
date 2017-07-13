@@ -41,8 +41,7 @@ const furiganaSeperators = '.．。・ ';
 const seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
 
 // Returns true if seperators were created
-// TODO: Make options aware for fallback brackets
-function createSeperatedRubyTags(state, mainText, rubyText) {
+function createSeperatedRubyTags(state, mainText, rubyText, fallbackOpening, fallbackClosing) {
   if (!seperatorRegex.test(rubyText)) { return false; }
 
   let mainChars = mainText.split('');
@@ -51,14 +50,13 @@ function createSeperatedRubyTags(state, mainText, rubyText) {
   if (mainChars.length !== rubyGroups.length) { return false; }
 
   for (let i = 0; i < mainChars.length; i++) {
-    addRubyTag(state, mainChars[i], rubyGroups[i], '【', '】');
+    addRubyTag(state, mainChars[i], rubyGroups[i], fallbackOpening, fallbackClosing);
   }
   return true;
 }
 
 // Returns true if pattern matching was successful
-// TODO: Make options aware for fallback brackets
-function patternMatchText(state, mainText, rubyText) {
+function patternMatchText(state, mainText, rubyText, fallbackOpening, fallbackClosing) {
   let nonKanji = mainText.split(kanjiBlockRegex).filter(emptyStringFilter);
 
   if (nonKanji.length === 0) { return false; }
@@ -91,7 +89,7 @@ function patternMatchText(state, mainText, rubyText) {
 
     let indexCopy = index;
     stateChanges.push(() => {
-      addRubyTag(state, kanji[indexCopy], splitFurigana[0], '【', '】');
+      addRubyTag(state, kanji[indexCopy], splitFurigana[0], fallbackOpening, fallbackClosing);
     });
 
     let currentNonKanjiCopy = (' ' + currentNonKanji).slice(1);
@@ -104,7 +102,7 @@ function patternMatchText(state, mainText, rubyText) {
   });
   if (copiedRubyText !== undefined && lastUsedKanjiIndex + 1 < kanji.length) {
     stateChanges.push(() => {
-      addRubyTag(state, kanji[lastUsedKanjiIndex + 1], copiedRubyText, '【', '】');
+      addRubyTag(state, kanji[lastUsedKanjiIndex + 1], copiedRubyText, fallbackOpening, fallbackClosing);
     });
   } else if (copiedRubyText !== undefined) {
     return false;
@@ -122,12 +120,14 @@ function patternMatchText(state, mainText, rubyText) {
 
 function processParsedRubyMarkup(state, start, end, mainText, rubyText, options) {
   let oldStart = state.pos,
-      oldEnd = state.posMax;
+      oldEnd = state.posMax,
+      fallbackOpening = options.furiganaFallbackBrackets.charAt(0),
+      fallbackClosing = options.furiganaFallbackBrackets.charAt(1);
 
-  if (!createSeperatedRubyTags(state, mainText, rubyText)) {
+  if (!createSeperatedRubyTags(state, mainText, rubyText, fallbackOpening, fallbackClosing)) {
     // Short-circuits if pattern matching is off
-    if (!(options.furiganaPatternMatching && patternMatchText(state, mainText, rubyText))) {
-      addRubyTag(state, mainText, rubyText, options.furiganaFallbackBrackets.charAt(0), options.furiganaFallbackBrackets.charAt(1));
+    if (!(options.furiganaPatternMatching && patternMatchText(state, mainText, rubyText, fallbackOpening, fallbackClosing))) {
+      addRubyTag(state, mainText, rubyText, fallbackOpening, fallbackClosing);
     }
   }
 
