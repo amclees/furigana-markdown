@@ -43,7 +43,17 @@ const seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
 // Returns true if seperators were created
 // TODO: Make options aware for fallback brackets
 function createSeperatedRubyTags(state, mainText, rubyText) {
-  return false;
+  if (!seperatorRegex.test(rubyText)) { return false; }
+
+  let mainChars = mainText.split('');
+  let rubyGroups = rubyText.split(seperatorRegex);
+
+  if (mainChars.length !== rubyGroups.length) { return false; }
+
+  for (let i = 0; i < mainChars.length; i++) {
+    addRubyTag(state, mainChars[i], rubyGroups[i], '【', '】');
+  }
+  return true;
 }
 
 // Returns true if pattern matching was successful
