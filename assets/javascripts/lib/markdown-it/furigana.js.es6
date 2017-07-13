@@ -63,22 +63,23 @@ function ruby(state, silent, options) {
   if (state.src.charCodeAt(state.pos) !== 0x5B/* [ */) { return false; }
 
   // Ends are where the closing brackets are
-  let startingPosition = state.pos,
+  let pos = state.pos,
+    startingPosition = state.pos,
     mainTextEnd,
     rubyTextStart,
     rubyTextEnd;
 
-  mainTextEnd = parseInnerText(state, state.pos, 0x5D/* ] */);
+  mainTextEnd = parseInnerText(state, pos, 0x5D/* ] */);
 
   if (mainTextEnd === -1) { return false; }
 
-  state.pos = mainTextEnd + 1;
+  pos = mainTextEnd + 1;
 
-  if (state.src.charCodeAt(state.pos) !== 0x7B/* { */) { return false; }
+  if (state.src.charCodeAt(pos) !== 0x7B/* { */) { return false; }
 
-  rubyTextStart = state.pos + 1;
+  rubyTextStart = pos + 1;
 
-  rubyTextEnd = parseInnerText(state, state.pos, 0x7D/* } */);
+  rubyTextEnd = parseInnerText(state, pos, 0x7D/* } */);
 
   if (rubyTextEnd === -1) { return false; }
 
