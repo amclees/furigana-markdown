@@ -1,10 +1,5 @@
-function addRubyTag(state, start, end, mainText, rubyText, fallbackOpening, fallbackClosing) {
-  let token,
-      oldStart = state.pos,
-      oldEnd = state.posMax;
-
-  state.pos = start;
-  state.posMax = end;
+function addRubyTag(state, mainText, rubyText, fallbackOpening, fallbackClosing) {
+  let token;
 
   token = state.push('ruby_open', 'ruby', 1);
   token = state.push('text', '', 0);
@@ -29,6 +24,103 @@ function addRubyTag(state, start, end, mainText, rubyText, fallbackOpening, fall
 
 
   token = state.push('ruby_close', 'ruby', -1);
+}
+
+function escapeForRegex(string) {
+  return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
+function emptyStringFilter(block) {
+  return block !== '';
+}
+
+const kanjiRange = '\\u4e00-\\u9faf';
+const kanjiBlockRegex = new RegExp(`[${kanjiRange}]+`, 'g');
+const nonKanjiBlockRegex = new RegExp(`[^${kanjiRange}]+`, 'g');
+const furiganaSeperators = '.．。・ ';
+const seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
+
+// Returns true if seperators were created
+// TODO: Make options aware for fallback brackets
+function createSeperatedRubyTags(state, mainText, rubyText) {
+  return false;
+}
+
+// Returns true if pattern matching was successful
+// TODO: Make options aware for fallback brackets
+function patternMatchText(state, mainText, rubyText) {
+  let nonKanji = mainText.split(kanjiBlockRegex).filter(emptyStringFilter);
+
+  if (nonKanji.length === 0) { return false; }
+
+  let token,
+      copiedRubyText = (' ' + rubyText).slice(1),
+      kanji = mainText.split(nonKanjiBlockRegex).filter(emptyStringFilter),
+      lastUsedKanjiIndex = 0,
+      stateChanges = [];
+
+  nonKanji.forEach((currentNonKanji, index) => {
+    if (copiedRubyText === undefined) {
+      if (index < kanji.length) {
+        stateChanges.push(() => {
+          token = state.push('text', '', 0);
+          token.content = kanji[index];
+        });
+      }
+
+      let currentNonKanjiCopy = (' ' + currentNonKanji).slice(1);
+      stateChanges.push(() => {
+        token = state.push('text', '', 0);
+        token.content = currentNonKanjiCopy;
+      });
+      return;
+    }
+    let splitFurigana = copiedRubyText.split(new RegExp(escapeForRegex(currentNonKanji) + '(.*)')).filter(emptyStringFilter);
+
+    lastUsedKanjiIndex = index;
+
+    let indexCopy = index;
+    stateChanges.push(() => {
+      addRubyTag(state, kanji[indexCopy], splitFurigana[0], '【', '】');
+    });
+
+    let currentNonKanjiCopy = (' ' + currentNonKanji).slice(1);
+    stateChanges.push(() => {
+      token = state.push('text', '', 0);
+      token.content = currentNonKanjiCopy;
+    });
+
+    copiedRubyText = splitFurigana[1];
+  });
+  if (copiedRubyText !== undefined && lastUsedKanjiIndex + 1 < kanji.length) {
+    stateChanges.push(() => {
+      addRubyTag(state, kanji[lastUsedKanjiIndex + 1], copiedRubyText, '【', '】');
+    });
+  } else if (copiedRubyText !== undefined) {
+    return false;
+  } else if (lastUsedKanjiIndex + 1 < kanji.length) {
+    stateChanges.push(() => {
+      token = state.push('text', '', 0);
+      token.content = kanji[lastUsedKanjiIndex + 1];
+    });
+  }
+  for (let i = 0; i < stateChanges.length; i++) {
+    stateChanges[i]();
+  }
+  return true;
+}
+
+function processParsedRubyMarkup(state, start, end, mainText, rubyText, options) {
+  let oldStart = state.pos,
+      oldEnd = state.posMax;
+
+  if (!createSeperatedRubyTags(state, mainText, rubyText)) {
+    // Short-circuits if pattern matching is off
+    if (!(options.furiganaPatternMatching && patternMatchText(state, mainText, rubyText))) {
+      addRubyTag(state, mainText, rubyText, options.furiganaFallbackBrackets.charAt(0), options.furiganaFallbackBrackets.charAt(1));
+    }
+  }
+
   state.pos = oldStart;
   state.posMax = oldEnd;
 }
@@ -59,6 +151,7 @@ function parseInnerText(state, start, terminatorCode) {
   return endPosition;
 }
 
+// charCodeAt is much faster than charAt in Chrome
 function ruby(state, silent, options) {
   if (state.src.charCodeAt(state.pos) !== 0x5B/* [ */) { return false; }
 
@@ -86,7 +179,7 @@ function ruby(state, silent, options) {
   state.pos = rubyTextEnd + 1;
 
   if (!silent) {
-    addRubyTag(state, startingPosition, rubyTextEnd, state.src.slice(startingPosition + 1, mainTextEnd), state.src.slice(rubyTextStart, rubyTextEnd), '【', '】');
+    processParsedRubyMarkup(state, startingPosition, rubyTextEnd, state.src.slice(startingPosition + 1, mainTextEnd), state.src.slice(rubyTextStart, rubyTextEnd), options);
   }
 
   return true;
@@ -99,10 +192,15 @@ export function setup(helper) {
     // Needed to allow disabling, enabled by default if not set
     opts.features.furigana = !!siteSettings.furigana;
 
-    opts.furiganaForms = siteSettings.furigana_plugin_forms;
+    // TODO: Decide whether to fully support custom furigana forms
+    // opts.furiganaForms = siteSettings.furigana_plugin_forms;
+
     opts.furiganaFallbackBrackets = siteSettings.furigana_fallback_brackets;
-    opts.furiganaStrictMode = !!siteSettings.furigana_strict_mode;
-    opts.furiganaAutoBracketSets = siteSettings.furigana_plugin_auto_bracket_sets;
+
+    if (!opts.furiganaFallbackBrackets) {
+      opts.furiganaFallbackBrackets = '【】';
+    }
+
     opts.furiganaPatternMatching = siteSettings.furigana_pattern_matching;
   });
 
