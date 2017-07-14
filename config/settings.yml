@@ -17,3 +17,9 @@ plugins:
   furigana_pattern_matching:
     default: true
     client: true
+  furigana_enable_seperators:
+    default: true
+    client: true
+  furigana_seperators:
+    default: ".．。・ "
+    client: true

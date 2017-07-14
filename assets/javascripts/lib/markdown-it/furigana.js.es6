@@ -37,8 +37,8 @@ function emptyStringFilter(block) {
 const kanjiRange = '\\u4e00-\\u9faf';
 const kanjiBlockRegex = new RegExp(`[${kanjiRange}]+`, 'g');
 const nonKanjiBlockRegex = new RegExp(`[^${kanjiRange}]+`, 'g');
-const furiganaSeperators = '.．。・ ';
-const seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
+let furiganaSeperators = '.．。・ ';
+let seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
 
 // Returns true if seperators were created
 function createSeperatedRubyTags(state, mainText, rubyText, fallbackOpening, fallbackClosing) {
@@ -57,13 +57,16 @@ function createSeperatedRubyTags(state, mainText, rubyText, fallbackOpening, fal
 
 // Returns true if pattern matching was successful
 function patternMatchText(state, mainText, rubyText, fallbackOpening, fallbackClosing) {
-  let nonKanji = mainText.split(kanjiBlockRegex).filter(emptyStringFilter);
+  if (!kanjiBlockRegex.test(mainText.charAt(0))) { return false; }
 
+  let nonKanji = mainText.split(kanjiBlockRegex).filter(emptyStringFilter);
   if (nonKanji.length === 0) { return false; }
+
+  let kanji = mainText.split(nonKanjiBlockRegex).filter(emptyStringFilter);
+  if (kanji.length === 0) { return false; }
 
   let token,
       copiedRubyText = (' ' + rubyText).slice(1),
-      kanji = mainText.split(nonKanjiBlockRegex).filter(emptyStringFilter),
       lastUsedKanjiIndex = 0,
       stateChanges = [];
 
@@ -124,7 +127,12 @@ function processParsedRubyMarkup(state, start, end, mainText, rubyText, options)
       fallbackOpening = options.furiganaFallbackBrackets.charAt(0),
       fallbackClosing = options.furiganaFallbackBrackets.charAt(1);
 
-  if (!createSeperatedRubyTags(state, mainText, rubyText, fallbackOpening, fallbackClosing)) {
+  if (options.furiganaEnableSeperators && options.furiganaSeperators !== furiganaSeperators) {
+    furiganaSeperators = options.furiganaSeperators;
+    seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
+  }
+
+  if (!(options.furiganaEnableSeperators && createSeperatedRubyTags(state, mainText, rubyText, fallbackOpening, fallbackClosing))) {
     // Short-circuits if pattern matching is off
     if (!(options.furiganaPatternMatching && patternMatchText(state, mainText, rubyText, fallbackOpening, fallbackClosing))) {
       addRubyTag(state, mainText, rubyText, fallbackOpening, fallbackClosing);
@@ -212,6 +220,9 @@ export function setup(helper) {
     }
 
     opts.furiganaPatternMatching = siteSettings.furigana_pattern_matching;
+
+    opts.furiganaEnableSeperators = !!siteSettings.furigana_enable_seperators;
+    opts.furiganaSeperators = siteSettings.furigana_seperators;
   });
 
   helper.whiteList([

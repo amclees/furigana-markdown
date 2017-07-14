@@ -1,8 +1,10 @@
 en:
   site_settings:
     furigana: "Enable the furigana markdown plugin. If you change this, you must rebake all posts with: \"rake posts:rebake\"."
-    furigana_strict_mode: "Strict mode disallows automatically placed furigana (this type: 世界【せかい】)."
-    furigana_plugin_forms: "List of all furigana forms that will be transformed to ruby tags."
-    furigana_plugin_auto_bracket_sets: "Sets the brackets that can be used for automatically placed furigana (this type: 世界【せかい】). Seperate with |."
+    furigana_strict_mode: "Strict mode disallows automatically placed furigana (this type: 世界【せかい】). Not supported in the markdown-it engine."
+    furigana_plugin_forms: "List of all furigana forms that will be transformed to ruby tags. Not supported in the markdown-it engine."
+    furigana_plugin_auto_bracket_sets: "Sets the brackets that can be used for automatically placed furigana (this type: 世界【せかい】). Seperate with |. Not supported in the markdown-it engine."
     furigana_fallback_brackets: "Sets the brackets that furigana will appear in where ruby is not supported (most emails). For example \"[]\" is a valid set of brackets for this."
     furigana_pattern_matching: "Enables pattern matching. For example, \"[繰り返す]{くりかえす}\" will display like \"[繰]{く}り[返]{かえ}す\""
+    furigana_enable_seperators: "Enables seperators. Allows, for example, \"[漢字]{かん・じ}\". Only supported in the markdown-it engine."
+    furigana_seperators: "All seperators used to split furigana across kanji are listed here."
