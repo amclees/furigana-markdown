@@ -57,7 +57,25 @@ function createSeperatedRubyTags(state, mainText, rubyText, fallbackOpening, fal
 
 // Returns true if pattern matching was successful
 function patternMatchText(state, mainText, rubyText, fallbackOpening, fallbackClosing) {
-  if (!kanjiBlockRegex.test(mainText.charAt(0))) { return false; }
+  // お and ご are very common prefixes, this allows them inside pattern matching.
+  const firstChar = mainText.charAt(0),
+        firstIsHonorific = firstChar === 'お' || firstChar === 'ご';
+  let stateChanges = [];
+
+  // No kanji or honorific start
+  if (!kanjiBlockRegex.test(firstChar) && !firstIsHonorific) { return false; }
+
+  // Ruby text doesn't have the honorific, quit since main text doesn't start with kanji
+  if (firstIsHonorific && firstChar !== rubyText.charAt(0)) { return false; }
+
+  if (firstIsHonorific) {
+    mainText = mainText.slice(1);
+    rubyText = rubyText.slice(1);
+    stateChanges.push(() => {
+      token = state.push('text', '', 0);
+      token.content = firstChar;
+    });
+  }
 
   let nonKanji = mainText.split(kanjiBlockRegex).filter(emptyStringFilter);
   if (nonKanji.length === 0) { return false; }
@@ -67,8 +85,7 @@ function patternMatchText(state, mainText, rubyText, fallbackOpening, fallbackCl
 
   let token,
       copiedRubyText = (' ' + rubyText).slice(1),
-      lastUsedKanjiIndex = 0,
-      stateChanges = [];
+      lastUsedKanjiIndex = 0;
 
   nonKanji.forEach((currentNonKanji, index) => {
     if (copiedRubyText === undefined) {
