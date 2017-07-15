@@ -90,6 +90,7 @@ function patternMatchText(state, mainText, rubyText, fallbackOpening, fallbackCl
   nonKanji.forEach((currentNonKanji, index) => {
     if (copiedRubyText === undefined) {
       if (index < kanji.length) {
+        lastUsedKanjiIndex = index;
         stateChanges.push(() => {
           token = state.push('text', '', 0);
           token.content = kanji[index];
@@ -158,6 +159,7 @@ function processParsedRubyMarkup(state, start, end, mainText, rubyText, options)
 
   state.pos = oldStart;
   state.posMax = oldEnd;
+  console.log(state);
 }
 
 // Given the position of a starting char, finds all text before terminator or fails with -1.
