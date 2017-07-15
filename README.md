@@ -2,6 +2,9 @@
 
 HTML5 `<ruby>` markdown notation for [Discourse](https://www.discourse.org).
 
+As of now the markdown-it version does not support all features and will not work on the server-side.
+Once it can be properly loaded into the server side this readme will be dedicated to the markdown-it version.
+
 ## Usage
 
 [//]: # (Images are used instead of HTML ruby tags to preserve compatibility with more markdown implementations.)
