@@ -37,8 +37,9 @@ function emptyStringFilter(block) {
 const kanjiRange = '\\u4e00-\\u9faf';
 const kanjiBlockRegex = new RegExp(`[${kanjiRange}]+`, 'g');
 const nonKanjiBlockRegex = new RegExp(`[^${kanjiRange}]+`, 'g');
-let furiganaSeperators = '.．。・ ';
-let seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
+// Allows spaces, full and not full width.
+let furiganaSeperators = '';
+let seperatorRegex = /[\.． 　。・]/g;
 
 // Returns true if seperators were created
 function createSeperatedRubyTags(state, mainText, rubyText, fallbackOpening, fallbackClosing) {
@@ -147,7 +148,7 @@ function processParsedRubyMarkup(state, start, end, mainText, rubyText, options)
 
   if (options.furiganaEnableSeperators && options.furiganaSeperators !== furiganaSeperators) {
     furiganaSeperators = options.furiganaSeperators;
-    seperatorRegex = new RegExp(`[${furiganaSeperators}]`, 'g');
+    seperatorRegex = new RegExp(`[${escapeForRegex(furiganaSeperators)}]`, 'g');
   }
 
   if (!(options.furiganaEnableSeperators && createSeperatedRubyTags(state, mainText, rubyText, fallbackOpening, fallbackClosing))) {
@@ -159,7 +160,6 @@ function processParsedRubyMarkup(state, start, end, mainText, rubyText, options)
 
   state.pos = oldStart;
   state.posMax = oldEnd;
-  console.log(state);
 }
 
 // Given the position of a starting char, finds all text before terminator or fails with -1.
